@@ -1,2 +1,0 @@
-# vertigokarts
-Web de vertigokarts.

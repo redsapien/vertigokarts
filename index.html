@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <!-- ============================================================
+    TEMA: theme-color para móvil → experiencia app nativa
+    ============================================================ -->
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>VertiGoKarts · Hero</title>
+
+    <!-- ============================================================
+    SECCIÓN 1: VARIABLES CSS + RESET + ESTILOS GLOBALES
+    ============================================================ -->
+    <style>
+        /* ---------- 1.1: VARIABLES DE MARCA ---------- */
+        :root {
+            --color-primary: #FF4500;
+            --color-dark: #0A0A0A;
+            --color-light: #FFFFFF;
+            --color-overlay: rgba(10, 10, 10, 0.65);
+            --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --transition-fast: 0.25s ease;
+            --transition-smooth: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            --radius-full: 9999px;
+            --z-preloader: 10000;
+            --z-hero: 1;
+            --z-overlay: 2;
+            --z-content: 3;
+        }
+
+        /* ---------- 1.2: RESET Y BASE ---------- */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: var(--color-dark);
+        }
+        body {
+            font-family: var(--font-main);
+            background: var(--color-dark);
+            color: var(--color-light);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        /* ---------- 1.3: CONTENEDOR PRINCIPAL ---------- */
+        #app {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.8s ease 0.2s;
+            background: var(--color-dark);
+        }
+        #app.visible { opacity: 1; }
+
+        /* ============================================================
+        SECCIÓN 2: PRELOADER (se mantiene igual, solo se quitan la frase y la barra)
+        ============================================================ */
+        #preloader {
+            position: fixed;
+            inset: 0;
+            z-index: var(--z-preloader);
+            background: var(--color-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.7s ease, transform 0.7s ease, visibility 0.7s ease;
+            will-change: opacity, transform;
+            animation: engineRumble 0.15s infinite alternate ease-in-out;
+        }
+        #preloader.hidden {
+            opacity: 0;
+            transform: scale(1.05);
+            visibility: hidden;
+            pointer-events: none;
+        }
+        @keyframes engineRumble {
+            0% { transform: translate(-1px, -1px) scale(1.002); }
+            25% { transform: translate(1px, 0px) scale(0.998); }
+            50% { transform: translate(-1px, 1px) scale(1.001); }
+            75% { transform: translate(1px, -1px) scale(0.999); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        .preloader-content {
+            text-align: center;
+            position: relative;
+            padding: 20px;
+        }
+
+        .preloader-logo {
+            font-size: clamp(2.8rem, 10vw, 5.6rem);
+            font-weight: 900;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: var(--color-light);
+            position: relative;
+            display: inline-block;
+            animation: exhaustFlicker 0.6s infinite alternate;
+        }
+        .preloader-logo .highlight {
+            color: var(--color-primary);
+            position: relative;
+        }
+        .preloader-logo .highlight::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 6px;
+            width: 100%;
+            height: 4px;
+            background: var(--color-primary);
+            border-radius: 4px;
+            filter: blur(2px);
+            animation: glowLine 0.8s infinite alternate;
+        }
+        @keyframes glowLine {
+            0% { opacity: 0.3; transform: scaleX(0.8); }
+            100% { opacity: 1; transform: scaleX(1); }
+        }
+        @keyframes exhaustFlicker {
+            0% { text-shadow: 0 0 10px rgba(255, 69, 0, 0.2), 0 0 30px rgba(255, 69, 0, 0.05); transform: scale(1); }
+            100% { text-shadow: 0 0 30px rgba(255, 69, 0, 0.5), 0 0 80px rgba(255, 69, 0, 0.15); transform: scale(1.01); }
+        }
+
+        .preloader-wheel {
+            width: 110px;
+            height: 110px;
+            border: 6px solid var(--color-dark);
+            border-top: 6px solid var(--color-primary);
+            border-right: 6px solid var(--color-primary);
+            border-radius: 50%;
+            margin: 0 auto 28px;
+            animation: wheelSpin 0.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite,
+                wheelPulse 0.6s ease-in-out infinite alternate;
+            will-change: transform;
+            box-shadow: 0 0 50px rgba(255, 69, 0, 0.15), inset 0 0 30px rgba(255, 69, 0, 0.05);
+            position: relative;
+        }
+        .preloader-wheel::before {
+            content: '';
+            position: absolute;
+            inset: -12px;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 69, 0, 0.2);
+            animation: wheelSpin 3s linear infinite reverse;
+        }
+        .preloader-wheel::after {
+            content: '⚡';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            color: var(--color-primary);
+            animation: sparkFade 0.5s infinite alternate;
+        }
+        @keyframes wheelSpin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes wheelPulse {
+            0% { box-shadow: 0 0 20px rgba(255, 69, 0, 0.1); }
+            100% { box-shadow: 0 0 60px rgba(255, 69, 0, 0.3); }
+        }
+        @keyframes sparkFade {
+            0% { opacity: 0.4; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* (Eliminados .preloader-sub y .preloader-bar) */
+
+        /* ============================================================
+        SECCIÓN 3: HERO – VIDEO + OVERLAY + CONTENIDO
+        ============================================================ */
+        .hero {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: var(--color-dark);
+        }
+        .hero-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: var(--z-hero);
+            will-change: transform;
+            transform: scale(1.01);
+        }
+        /* ---------- Sombra cinemática en el overlay ---------- */
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: var(--z-overlay);
+            /* Sombra interior sutil para dar profundidad y resaltar el texto */
+            box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.5), inset 0 0 60px rgba(0, 0, 0, 0.3);
+            background: var(--color-overlay);
+            background: linear-gradient(135deg,
+                    rgba(10, 10, 10, 0.75) 0%,
+                    rgba(10, 10, 10, 0.40) 50%,
+                    rgba(10, 10, 10, 0.70) 100%);
+            background-image:
+                repeating-linear-gradient(90deg,
+                    transparent 0px, transparent 3px,
+                    rgba(255, 69, 0, 0.02) 3px, rgba(255, 69, 0, 0.02) 4px),
+                linear-gradient(135deg,
+                    rgba(10, 10, 10, 0.75) 0%,
+                    rgba(10, 10, 10, 0.40) 50%,
+                    rgba(10, 10, 10, 0.70) 100%);
+            background-blend-mode: overlay;
+        }
+        .hero-content {
+            position: relative;
+            z-index: var(--z-content);
+            text-align: center;
+            max-width: 860px;
+            padding: 0 24px;
+            animation: heroRise 1.2s cubic-bezier(0.23, 1, 0.32, 1) 0.5s both;
+            will-change: transform, opacity;
+        }
+        @keyframes heroRise {
+            0% { opacity: 0; transform: translateY(50px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ---------- 3.4: BADGE (Manizales · Villamaria) – AUMENTADO 50% ---------- */
+        .hero-badge {
+            display: inline-block;
+            background: var(--color-primary);
+            color: var(--color-dark);
+            font-weight: 800;
+            font-size: 1.05rem;   /* 0.7rem * 1.5 */
+            letter-spacing: 4px;
+            padding: 6px 22px;
+            border-radius: var(--radius-full);
+            text-transform: uppercase;
+            margin-bottom: 28px;
+            box-shadow: 0 0 30px rgba(255, 69, 0, 0.25);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+            will-change: transform;
+        }
+        .hero-badge:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 50px rgba(255, 69, 0, 0.4);
+        }
+
+        /* ---------- 3.5: TÍTULO (sin vibración y subrayado estático) ---------- */
+        .hero-title {
+            font-size: clamp(2.8rem, 14vw, 7.2rem);
+            font-weight: 900;
+            line-height: 1.02;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 18px;
+            text-shadow:
+                0 4px 30px rgba(0, 0, 0, 0.8),
+                0 8px 60px rgba(0, 0, 0, 0.5),
+                0 2px 10px rgba(0, 0, 0, 0.4),
+                0 0 80px rgba(255, 69, 0, 0.08);
+            color: var(--color-light);
+            will-change: transform;
+        }
+        .hero-title .highlight {
+            color: var(--color-primary);
+            position: relative;
+            display: inline-block;
+        }
+        /* Subrayado estático (sin palpito) */
+        .hero-title .highlight::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 4px;
+            width: 100%;
+            height: 5px;
+            background: var(--color-primary);
+            border-radius: 4px;
+            opacity: 0.5;
+            filter: blur(2px);
+            /* Sin animación: queda fijo */
+            transform: scaleX(1);
+        }
+
+        /* ---------- 3.6: PÁRRAFO (12 palabras) ---------- */
+        .hero-desc {
+            font-size: clamp(1rem, 2.2vw, 1.45rem);
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.92);
+            max-width: 640px;
+            margin: 0 auto 38px;
+            line-height: 1.6;
+            letter-spacing: 0.3px;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6), 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ---------- 3.7: BOTÓN CON VIBRACIÓN SUTIL Y ACELERACIÓN (suavizado) ---------- */
+        .btn-hero {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 18px 52px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: var(--color-dark);
+            background: var(--color-primary);
+            border: none;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.3s ease,
+                        background 0.3s ease;
+            box-shadow: 0 12px 40px rgba(255, 69, 0, 0.35);
+            will-change: transform, box-shadow;
+            overflow: visible;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            /* La vibración sutil se aplica con la clase .rumble-sutil (añadida en HTML) */
+        }
+        /* Vibración sutil (idle) – más rápida y con menos desplazamiento */
+        .btn-hero.rumble-sutil {
+            animation: btnRumbleSutil 0.06s infinite alternate ease-in-out;
+        }
+        @keyframes btnRumbleSutil {
+            0%   { transform: translate(-0.15px, -0.15px) rotate(-0.1deg); }
+            25%  { transform: translate(0.15px, 0px) rotate(0.1deg); }
+            50%  { transform: translate(-0.15px, 0.15px) rotate(-0.05deg); }
+            75%  { transform: translate(0.15px, -0.15px) rotate(0.05deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
+        }
+        /* Vibración fuerte (aceleración) – menos agresiva */
+        .btn-hero.rumble-fuerte {
+            animation: btnRumbleFuerte 0.03s infinite alternate ease-in-out !important;
+        }
+        @keyframes btnRumbleFuerte {
+            0%   { transform: translate(-0.5px, -0.5px) rotate(-0.3deg) scale(1.01); }
+            25%  { transform: translate(0.5px, 0px) rotate(0.3deg) scale(0.99); }
+            50%  { transform: translate(-0.5px, 0.5px) rotate(-0.2deg) scale(1.005); }
+            75%  { transform: translate(0.5px, -0.5px) rotate(0.2deg) scale(0.995); }
+            100% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
+        }
+        /* Push-down después de acelerar */
+        .btn-hero.push-down {
+            animation: pushDown 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+        }
+        @keyframes pushDown {
+            0%   { transform: translateY(0) scale(1); box-shadow: 0 12px 40px rgba(255,69,0,0.35); }
+            40%  { transform: translateY(12px) scale(0.92); box-shadow: 0 4px 20px rgba(255,69,0,0.2); }
+            100% { transform: translateY(0) scale(1); box-shadow: 0 12px 40px rgba(255,69,0,0.35); }
+        }
+
+        .btn-hero::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: var(--radius-full);
+            background: linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
+            background-size: 250% 250%;
+            animation: btnShine 3.5s ease-in-out infinite;
+            z-index: -1;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        @keyframes btnShine {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .btn-hero:hover {
+            transform: scale(1.06);
+            box-shadow: 0 16px 50px rgba(255, 69, 0, 0.5);
+            background: #ff5722;
+        }
+        .btn-hero:active {
+            transform: scale(0.94);
+        }
+
+        .btn-hero .btn-icon {
+            font-size: 1.3rem;
+            transition: transform 0.3s ease;
+        }
+        .btn-hero:hover .btn-icon {
+            transform: translateX(4px) scale(1.1);
+        }
+
+        /* ---------- 3.8: PARTÍCULAS DE "BARRO / MUD" ---------- */
+        .particle-mud {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            border-radius: 50% 50% 50% 0;
+            background: #6B4226;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            animation: mudFly 0.9s cubic-bezier(0.2, 0.8, 0.3, 1.2) forwards;
+            will-change: transform, opacity;
+        }
+        .particle-mud:nth-child(odd) {
+            background: #8B5A2B;
+            border-radius: 50% 50% 0 50%;
+        }
+        .particle-mud:nth-child(3n) {
+            background: #A67B5B;
+            border-radius: 40% 60% 50% 30%;
+        }
+        .particle-mud:nth-child(5n+1) {
+            background: var(--color-primary);
+            border-radius: 60% 40% 30% 50%;
+            box-shadow: 0 0 20px rgba(255, 69, 0, 0.3);
+        }
+        .particle-mud:nth-child(7n+3) {
+            background: #4A2A1A;
+            border-radius: 30% 70% 40% 60%;
+        }
+        @keyframes mudFly {
+            0% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.15) rotate(720deg); }
+        }
+
+        /* ============================================================
+        SECCIÓN 4: RESPONSIVIDAD (Mobile First)
+        ============================================================ */
+
+        /* ---------- 4.1: TABLET Y MÓVIL ---------- */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: clamp(2.2rem, 10vw, 3.8rem);
+                letter-spacing: 0;
+            }
+            .hero-desc {
+                font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+                padding: 0 8px;
+            }
+            .btn-hero {
+                padding: 15px 34px;
+                font-size: 0.95rem;
+                letter-spacing: 1.5px;
+                gap: 8px;
+            }
+            /* Badge tamaño aumentado 50% en tablet */
+            .hero-badge {
+                font-size: 0.9rem;   /* 0.6rem * 1.5 */
+                padding: 4px 16px;
+                letter-spacing: 3px;
+            }
+            .preloader-logo {
+                font-size: clamp(2rem, 8vw, 3.2rem);
+                letter-spacing: 4px;
+            }
+            .preloader-wheel {
+                width: 80px;
+                height: 80px;
+                border-width: 5px;
+            }
+            .preloader-wheel::after {
+                font-size: 1.6rem;
+            }
+            .hero-title .highlight::after {
+                height: 3px;
+                bottom: 2px;
+            }
+        }
+
+        /* ---------- 4.2: MÓVIL PEQUEÑO – párrafo 50% más grande ---------- */
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: clamp(1.8rem, 9vw, 2.6rem);
+            }
+            .hero-desc {
+                font-size: 1.2rem;
+                margin-bottom: 28px;
+                padding: 0 10px;
+            }
+            .btn-hero {
+                padding: 14px 28px;
+                font-size: 0.85rem;
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+            /* Badge tamaño aumentado 50% en móvil pequeño */
+            .hero-badge {
+                font-size: 0.75rem;   /* 0.5rem * 1.5 */
+                padding: 3px 12px;
+                letter-spacing: 2px;
+                margin-bottom: 18px;
+            }
+            .preloader-logo {
+                font-size: clamp(1.6rem, 7vw, 2.4rem);
+                letter-spacing: 3px;
+            }
+            .preloader-wheel {
+                width: 64px;
+                height: 64px;
+                border-width: 4px;
+                margin-bottom: 20px;
+            }
+            .preloader-wheel::after {
+                font-size: 1.2rem;
+            }
+            .hero-content {
+                padding: 0 16px;
+            }
+        }
+
+        /* ---------- 4.3: PANTALLAS GRANDES (PC) – badge 50% más grande que párrafo ---------- */
+        @media (min-width: 768px) {
+            .hero-desc {
+                font-size: 1.5rem;
+                max-width: 740px;
+            }
+            /* Badge 50% más grande que el párrafo (1.5rem * 1.5 = 2.25rem) */
+            .hero-badge {
+                font-size: 2.25rem;
+                padding: 8px 32px;
+                letter-spacing: 6px;
+                margin-bottom: 36px;
+            }
+            .btn-hero {
+                padding: 22px 64px;
+                font-size: 1.35rem;
+            }
+            .hero-title {
+                font-size: clamp(3.5rem, 8vw, 6rem);
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .hero-title { font-size: clamp(4rem, 7vw, 6.5rem); }
+            .hero-desc { font-size: 1.8rem; max-width: 800px; }
+            .hero-badge { font-size: 2.6rem; }
+            .btn-hero { padding: 24px 72px; font-size: 1.5rem; }
+        }
+
+        /* ---------- 4.4: ORIENTACIÓN PAISAJE EN MÓVIL ---------- */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .hero-title {
+                font-size: clamp(1.6rem, 6vh, 2.8rem);
+            }
+            .hero-desc {
+                font-size: clamp(0.7rem, 1.8vh, 0.95rem);
+                margin-bottom: 18px;
+                max-width: 70%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .hero-badge {
+                margin-bottom: 12px;
+                font-size: 0.75rem;   /* 0.5rem * 1.5 */
+                padding: 3px 14px;
+            }
+            .btn-hero {
+                padding: 10px 28px;
+                font-size: 0.8rem;
+            }
+            .hero-content {
+                padding-top: 10px;
+            }
+        }
+
+        /* ============================================================
+        SECCIÓN 5: UTILIDADES Y ANIMACIONES ADICIONALES
+        ============================================================ */
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--color-dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-primary);
+            border-radius: 4px;
+        }
+
+        .go-kart-flash {
+            position: fixed;
+            inset: 0;
+            z-index: 99998;
+            background: var(--color-primary);
+            pointer-events: none;
+            opacity: 0;
+            animation: kartFlash 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        @keyframes kartFlash {
+            0% { opacity: 0; transform: scale(0.8); }
+            20% { opacity: 0.9; transform: scale(1); }
+            60% { opacity: 0.6; transform: scale(1.02); }
+            100% { opacity: 0; transform: scale(1.1); }
+        }
+
+        .btn-hero.loading {
+            pointer-events: none;
+            opacity: 0.7;
+            transform: scale(0.98);
+        }
+        .btn-hero.loading .btn-text {
+            visibility: hidden;
+        }
+        .btn-hero.loading .btn-icon {
+            animation: spinIcon 0.8s linear infinite;
+        }
+        @keyframes spinIcon {
+            to { transform: rotate(360deg); }
+        }
+
+        link[rel="icon"] {
+            border-radius: 4px;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        .btn-hero .btn-ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0);
+            animation: rippleOut 0.7s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes rippleOut {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* ============================================================
+        SECCIÓN 6: NUEVA SECCIÓN DE AGENDAMIENTO (Sección 2)
+        ============================================================ */
+        .booking-section {
+            min-height: 100vh;
+            min-height: 100dvh;          /* para móviles con barra dinámica */
+            background: var(--color-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 24px 80px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Título con efecto máquina de escribir - DESACTIVADO por defecto */
+        .typewriter-title {
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 3px solid var(--color-primary);
+            font-size: clamp(1rem, 2.8vw, 2.8rem);
+            font-weight: 800;
+            color: var(--color-light);
+            letter-spacing: 1px;
+            margin: 0 auto 40px;
+            padding-right: 8px;
+            width: 0;
+            max-width: 100%;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.6);
+            /* Sin animación por defecto */
+            animation: none;
+        }
+
+        /* Clase que activa el efecto typewriter (se añade con JS) */
+        .typewriter-title.typewriter-active {
+            animation: typewriter 2.2s steps(33) 0.6s forwards,
+                       blink 0.75s step-end infinite;
+        }
+
+        @keyframes typewriter {
+            100% { width: 33ch; }  /* 33 caracteres exactos */
+        }
+        @keyframes blink {
+            0%, 100% { border-color: var(--color-primary); }
+            50% { border-color: transparent; }
+        }
+
+        /* Contenedor del calendario Cal.com - MODIFICADO: 20% MÁS LARGO */
+        .cal-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 10px;
+            box-sizing: border-box;
+            height: 108vh;          /* 90vh * 1.2 = 108vh */
+            min-height: 720px;      /* 600px * 1.2 = 720px */
+        }
+
+        #my-cal-inline-carrera {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background: #1a1a1a;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,69,0,0.15);
+            transition: box-shadow 0.3s ease;
+        }
+
+        #my-cal-inline-carrera:hover {
+            box-shadow: 0 30px 80px rgba(255,69,0,0.2), 0 0 0 1px var(--color-primary);
+        }
+
+        /* Ajustes para el iframe interno (evita doble scroll) */
+        #my-cal-inline-carrera iframe {
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+            display: block !important;
+        }
+
+        /* Responsive del calendario - 20% MÁS LARGO en cada breakpoint */
+        @media (max-width: 768px) {
+            .booking-section {
+                padding: 40px 16px 60px;
+            }
+            .cal-wrapper {
+                height: 96vh;          /* 80vh * 1.2 = 96vh */
+                min-height: 600px;     /* 500px * 1.2 = 600px */
+            }
+            #my-cal-inline-carrera {
+                border-radius: 12px;
+            }
+            .typewriter-title {
+                font-size: clamp(0.9rem, 3.5vw, 1.6rem);
+                margin-bottom: 30px;
+                /* La animación se activa con la clase .typewriter-active */
+            }
+            .typewriter-title.typewriter-active {
+                animation: typewriter 1.8s steps(33) 0.5s forwards,
+                           blink 0.7s step-end infinite;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .booking-section {
+                padding: 30px 12px 50px;
+            }
+            .cal-wrapper {
+                height: 84vh;          /* 70vh * 1.2 = 84vh */
+                min-height: 480px;     /* 400px * 1.2 = 480px */
+            }
+            #my-cal-inline-carrera {
+                border-radius: 10px;
+            }
+            .typewriter-title {
+                font-size: clamp(0.8rem, 4vw, 1.2rem);
+                margin-bottom: 24px;
+            }
+            .typewriter-title.typewriter-active {
+                animation: typewriter 1.8s steps(33) 0.5s forwards,
+                           blink 0.7s step-end infinite;
+            }
+        }
+
+        /* Cuando el ancho sea muy pequeño (≤360px) */
+        @media (max-width: 360px) {
+            .cal-wrapper {
+                height: 72vh;          /* 60vh * 1.2 = 72vh */
+                min-height: 384px;     /* 320px * 1.2 = 384px */
+            }
+            .typewriter-title {
+                font-size: 0.75rem;
+            }
+            .typewriter-title.typewriter-active {
+                animation: typewriter 1.8s steps(33) 0.5s forwards,
+                           blink 0.7s step-end infinite;
+            }
+        }
+
+        /* ============================================================
+        FIN DE ESTILOS
+        ============================================================ */
+    </style>
+</head>
+
+<body>
+
+    <!-- ============================================================
+    SECCIÓN 7: PRELOADER (HTML) – se mantiene la rueda y el logo, se eliminan la frase y la barra
+    ============================================================ -->
+    <div id="preloader" role="status" aria-label="Cargando VertiGoKarts">
+        <div class="preloader-content">
+            <!-- Rueda / volante animado -->
+            <div class="preloader-wheel" aria-hidden="true"></div>
+            <!-- Logo con CSS puro -->
+            <div class="preloader-logo">
+                Verti<span class="highlight">Go</span>Karts
+            </div>
+            <!-- (Eliminado: <div class="preloader-sub">⚡ Rugido de motor ⚡</div>) -->
+            <!-- (Eliminado: <div class="preloader-bar" aria-hidden="true"></div>) -->
+        </div>
+    </div>
+
+    <!-- ============================================================
+    SECCIÓN 8: APLICACIÓN PRINCIPAL (HERO + AGENDAMIENTO)
+    ============================================================ -->
+    <div id="app" role="main">
+        <!-- SECCIÓN 1: HERO -->
+        <section class="hero" id="heroSection">
+
+            <!-- 8.1: VIDEO DE FONDO -->
+            <video class="hero-video" id="heroVideo" muted loop playsinline preload="metadata"
+            poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%230A0A0A'/%3E%3C/svg%3E"
+            aria-label="Fondo de pista de karts en Manizales">
+            <source src="Video/Video-experiencia.mp4" type="video/mp4">
+            <track kind="captions" srclang="es" label="Español" default>
+            Tu navegador no soporta video HTML5.
+        </video>
+
+        <!-- 8.2: CAPA OSCURA con sombra cinemática (ya aplicada en CSS) -->
+        <div class="hero-overlay" aria-hidden="true"></div>
+
+        <!-- 8.3: CONTENIDO CENTRAL -->
+        <div class="hero-content">
+
+            <!-- Badge: Manizales · Villamaria (sin 2026) – tamaño aumentado -->
+            <div class="hero-badge">🏁 Manizales · Villamaria</div>
+
+            <!-- TÍTULO (4 palabras) sin vibración y con subrayado estático -->
+            <h1 class="hero-title">
+                <span class="highlight">Vive</span> la velocidad
+                <span class="highlight">extrema</span>
+            </h1>
+
+            <!-- PÁRRAFO (12 palabras) -->
+            <p class="hero-desc">
+                Disfruta la pista más rápida de Manizales con total seguridad y estilo.
+            </p>
+
+            <!-- BOTÓN PRINCIPAL con vibración sutil (clase rumble-sutil) -->
+            <button class="btn-hero rumble-sutil" id="btnHero" aria-label="Reservar tu kart ahora">
+                <span class="btn-icon">🏎️</span>
+                <span class="btn-text">Reservar Ahora</span>
+            </button>
+
+        </div>
+    </section>
+
+    <!-- ============================================================
+    SECCIÓN 9: NUEVA SECCIÓN DE AGENDAMIENTO (Sección 2)
+    ============================================================ -->
+    <section id="agendamiento" class="booking-section">
+        <h2 class="typewriter-title" id="typewriterTitle">Separa tu parche, fácil y rápido.</h2>
+        <div class="cal-wrapper">
+            <div style="width:100%;height:100%;overflow:scroll" id="my-cal-inline-carrera"></div>
+            <script type="text/javascript">
+                (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+                Cal("init", "carrera", {origin:"https://app.cal.com"});
+                Cal.config = Cal.config || {};
+                Cal.config.forwardQueryParams = true;
+
+                Cal.ns.carrera("inline", {
+                    elementOrSelector:"#my-cal-inline-carrera",
+                    config: {"layout":"month_view","useSlotsViewOnSmallScreen":"true", "theme": "dark"},
+                    calLink: "vertigokarts/carrera",
+                });
+
+                Cal.ns.carrera("ui", {"hideEventTypeDetails":false,"layout":"month_view", "theme": "dark"});
+            </script>
+        </div>
+    </section>
+
+</div>
+
+<!-- ============================================================
+SECCIÓN 10: JAVASCRIPT – FAVICON, PRELOADER, VIDEO, BOTÓN, PARTÍCULAS
+============================================================ -->
+<script>
+    (function() {
+        'use strict';
+
+        // ============================================================
+        // 10.1: FAVICON DINÁMICO – SVG con "V" estilo racing
+        // ============================================================
+        (function createFavicon() {
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(svgNS, 'svg');
+            svg.setAttribute('xmlns', svgNS);
+            svg.setAttribute('viewBox', '0 0 64 64');
+            svg.setAttribute('width', '64');
+            svg.setAttribute('height', '64');
+
+            const bg = document.createElementNS(svgNS, 'rect');
+            bg.setAttribute('width', '64');
+            bg.setAttribute('height', '64');
+            bg.setAttribute('fill', '#0A0A0A');
+            svg.appendChild(bg);
+
+            const pathV = document.createElementNS(svgNS, 'path');
+            pathV.setAttribute('d', 'M12 12 L32 48 L52 12');
+            pathV.setAttribute('stroke', '#FF4500');
+            pathV.setAttribute('stroke-width', '7');
+            pathV.setAttribute('fill', 'none');
+            pathV.setAttribute('stroke-linecap', 'round');
+            pathV.setAttribute('stroke-linejoin', 'round');
+            svg.appendChild(pathV);
+
+            const c1 = document.createElementNS(svgNS, 'rect');
+            c1.setAttribute('x', '44');
+            c1.setAttribute('y', '44');
+            c1.setAttribute('width', '16');
+            c1.setAttribute('height', '16');
+            c1.setAttribute('fill', '#FF4500');
+            svg.appendChild(c1);
+
+            const c2 = document.createElementNS(svgNS, 'rect');
+            c2.setAttribute('x', '52');
+            c2.setAttribute('y', '52');
+            c2.setAttribute('width', '8');
+            c2.setAttribute('height', '8');
+            c2.setAttribute('fill', '#FFFFFF');
+            svg.appendChild(c2);
+
+            const c3 = document.createElementNS(svgNS, 'rect');
+            c3.setAttribute('x', '44');
+            c3.setAttribute('y', '52');
+            c3.setAttribute('width', '8');
+            c3.setAttribute('height', '8');
+            c3.setAttribute('fill', '#FFFFFF');
+            svg.appendChild(c3);
+
+            const serialized = new XMLSerializer().serializeToString(svg);
+            const encoded = 'data:image/svg+xml;base64,' + btoa(serialized);
+            const link = document.createElement('link');
+            link.rel = 'icon';
+            link.href = encoded;
+            link.type = 'image/svg+xml';
+            document.head.appendChild(link);
+        })();
+
+        // ============================================================
+        // 10.2: PRELOADER – ocultar tras 1 segundo
+        // ============================================================
+        (function preloaderController() {
+            const preloader = document.getElementById('preloader');
+            const app = document.getElementById('app');
+            if (!preloader || !app) return;
+
+            preloader.classList.remove('hidden');
+
+            setTimeout(function() {
+                preloader.classList.add('hidden');
+                app.classList.add('visible');
+
+                setTimeout(function() {
+                    preloader.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    document.body.style.height = 'auto';
+                }, 800);
+            }, 1000);
+        })();
+
+        // ============================================================
+        // 10.3: VIDEO – autoplay con manejo de errores
+        // ============================================================
+        (function initVideo() {
+            const video = document.getElementById('heroVideo');
+            if (!video) return;
+
+            const tryPlay = function() {
+                video.play().catch(function(e) {
+                    const onInteraction = function() {
+                        video.play().catch(function() {});
+                        document.removeEventListener('click', onInteraction);
+                        document.removeEventListener('touchstart', onInteraction);
+                    };
+                    document.addEventListener('click', onInteraction, { once: true });
+                    document.addEventListener('touchstart', onInteraction, { once: true });
+                });
+            };
+
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            tryPlay();
+                            observer.unobserve(video);
+                        }
+                    });
+                }, { threshold: 0.2 });
+                observer.observe(video);
+            } else {
+                tryPlay();
+            }
+
+            document.addEventListener('click', function() {
+                if (video.paused) {
+                    video.play().catch(function() {});
+                }
+            }, { passive: true });
+
+            video.addEventListener('pause', function() {
+                if (!video.ended && video.readyState > 2) {
+                    video.play().catch(function() {});
+                }
+            });
+        })();
+
+        // ============================================================
+        // 10.4: BOTÓN – vibración sutil, aceleración, push-down y "¡Listo!"
+        // ============================================================
+        (function initButton() {
+            const btn = document.getElementById('btnHero');
+            if (!btn) return;
+
+            // El botón ya tiene la clase 'rumble-sutil' por defecto (vibración suave)
+
+            // ---------- 10.4.1: PULSO DE INVITACIÓN (opcional) ----------
+            let pulseTimer = setTimeout(function() {
+                btn.classList.add('pulse-attract');
+                setTimeout(function() {
+                    btn.classList.remove('pulse-attract');
+                }, 4000);
+            }, 3500);
+
+            // ---------- 10.4.2: CLICK – aceleración + push-down + "¡Listo!" + SCROLL ----------
+            btn.addEventListener('click', function(e) {
+                clearTimeout(pulseTimer);
+                btn.classList.remove('pulse-attract');
+
+                // 1. Quitar vibración sutil y poner vibración fuerte (aceleración)
+                btn.classList.remove('rumble-sutil');
+                btn.classList.add('rumble-fuerte');
+
+                // 2. Después de 1 segundo, quitar vibración fuerte, poner push-down y cambiar texto
+                setTimeout(function() {
+                    btn.classList.remove('rumble-fuerte');
+                    btn.classList.add('push-down');
+
+                    // Cambiar texto a "¡Listo! 🎯"
+                    const textEl = btn.querySelector('.btn-text');
+                    if (textEl) textEl.textContent = '¡Listo! 🎯';
+
+                    // ==========================================================
+                    // 🏁 ACELERÓN HACIA LA RESERVA (scroll suave a Sección 2)
+                    // ==========================================================
+                    document.getElementById('agendamiento').scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    // ==========================================================
+
+                    // Después de la animación push-down, restaurar vibración sutil y texto original
+                    setTimeout(function() {
+                        btn.classList.remove('push-down');
+                        btn.classList.add('rumble-sutil');
+                        // Restaurar texto después de 1.5s
+                        setTimeout(function() {
+                            if (textEl) textEl.textContent = 'Reservar Ahora';
+                        }, 1500);
+                    }, 600);
+                }, 1000); // 1 segundo de vibración fuerte
+
+                // 3. Partículas de barro (mud)
+                const rect = btn.getBoundingClientRect();
+                const cx = e.clientX || (rect.left + rect.width / 2);
+                const cy = e.clientY || (rect.top + rect.height / 2);
+
+                const count = 24;
+                const fragment = document.createDocumentFragment();
+                for (let i = 0; i < count; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle-mud';
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 40 + Math.random() * 150;
+                    const tx = Math.cos(angle) * distance + (Math.random() - 0.5) * 50;
+                    const ty = Math.sin(angle) * distance - 30 + (Math.random() - 0.5) * 40;
+                    particle.style.setProperty('--tx', tx + 'px');
+                    particle.style.setProperty('--ty', ty + 'px');
+                    const size = 6 + Math.random() * 18;
+                    particle.style.width = size + 'px';
+                    particle.style.height = size + 'px';
+                    particle.style.left = cx + 'px';
+                    particle.style.top = cy + 'px';
+                    particle.style.transform = 'translate(-50%, -50%)';
+                    const rot = Math.random() * 360;
+                    particle.style.transform += ' rotate(' + rot + 'deg)';
+                    fragment.appendChild(particle);
+                }
+                document.body.appendChild(fragment);
+
+                // 4. Flash "Go Kart"
+                const flash = document.createElement('div');
+                flash.className = 'go-kart-flash';
+                document.body.appendChild(flash);
+                setTimeout(function() { flash.remove(); }, 700);
+
+                // 5. Eliminar partículas
+                setTimeout(function() {
+                    document.querySelectorAll('.particle-mud').forEach(function(p) {
+                        p.remove();
+                    });
+                }, 1100);
+
+                // 6. Ripple
+                const ripple = document.createElement('span');
+                ripple.className = 'btn-ripple';
+                const sizeR = Math.max(rect.width, rect.height) * 0.6;
+                ripple.style.width = sizeR + 'px';
+                ripple.style.height = sizeR + 'px';
+                ripple.style.left = '50%';
+                ripple.style.top = '50%';
+                ripple.style.transform = 'translate(-50%, -50%) scale(0)';
+                btn.appendChild(ripple);
+                setTimeout(function() { ripple.remove(); }, 800);
+            });
+
+            // ---------- 10.4.3: ACCESIBILIDAD ----------
+            btn.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    btn.click();
+                }
+            });
+        })();
+
+        // ============================================================
+        // 10.5: PARALLAX SUTIL EN EL VIDEO
+        // ============================================================
+        (function initParallax() {
+            const video = document.querySelector('.hero-video');
+            if (!video) return;
+            let ticking = false;
+            window.addEventListener('scroll', function() {
+                if (!ticking) {
+                    window.requestAnimationFrame(function() {
+                        const scrollY = window.scrollY;
+                        const heroRect = document.getElementById('heroSection')?.getBoundingClientRect();
+                        if (heroRect && heroRect.top < window.innerHeight && heroRect.bottom > 0) {
+                            const translate = Math.min(scrollY * 0.08, 40);
+                            video.style.transform = 'scale(1.01) translateY(' + translate + 'px)';
+                        }
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }, { passive: true });
+        })();
+
+        // ============================================================
+        // 10.6: DETECCIÓN DE ORIENTACIÓN
+        // ============================================================
+        (function handleOrientation() {
+            const heroContent = document.querySelector('.hero-content');
+            if (!heroContent) return;
+            const adjust = function() {
+                const isLandscape = window.innerWidth > window.innerHeight;
+                const isSmall = window.innerWidth < 600;
+                if (isLandscape && isSmall) {
+                    heroContent.style.paddingTop = '10px';
+                } else {
+                    heroContent.style.paddingTop = '';
+                }
+            };
+            window.addEventListener('resize', adjust);
+            window.addEventListener('orientationchange', function() {
+                setTimeout(adjust, 300);
+            });
+            adjust();
+        })();
+
+        // ============================================================
+        // 10.7: PREVENCIÓN DE CLS
+        // ============================================================
+        (function preventCLS() {
+            const hero = document.getElementById('heroSection');
+            if (hero) {
+                hero.style.minHeight = '100vh';
+                hero.style.minHeight = '100dvh';
+            }
+        })();
+
+        // ============================================================
+        // 10.8: INTERSECTION OBSERVER PARA EL TÍTULO TYPEWRITER
+        // ============================================================
+        (function initTypewriter() {
+            const title = document.getElementById('typewriterTitle');
+            if (!title) return;
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        title.classList.add('typewriter-active');
+                        // Dejar de observar una vez activado
+                        observer.unobserve(title);
+                    }
+                });
+            }, {
+                threshold: 0.3, // se activa cuando el 30% del título es visible
+                rootMargin: '0px 0px -50px 0px' // pequeño ajuste
+            });
+
+            observer.observe(title);
+        })();
+
+        // ============================================================
+        // 10.9: CONSOLA DE MARCA
+        // ============================================================
+        console.log('%c🏁 VertiGoKarts · Manizales · Villamaria', 'font-size:22px; font-weight:900; color:#FF4500;');
+        console.log('%c⚡ Hero + Agendamiento integrados ⚡', 'font-size:12px; color:#888;');
+
+        // ============================================================
+        // 10.10: API EXPUESTA
+        // ============================================================
+        window.VertiGoKarts = {
+            hero: {
+                reserve: function() {
+                    document.getElementById('btnHero')?.click();
+                },
+                setVideo: function(src) {
+                    const video = document.getElementById('heroVideo');
+                    if (video && src) {
+                        video.src = src;
+                        video.load();
+                        video.play().catch(function() {});
+                    }
+                }
+            }
+        };
+
+    })();
+</script>
+
+</body>
+</html>
